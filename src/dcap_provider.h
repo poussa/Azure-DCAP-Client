@@ -1,12 +1,17 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#ifdef __LINUX__
+#include "sgx_ql_lib_common.h"
+#else
+#include "Windows\ext\intel\sgx_ql_lib_common.h"
+#endif
+
 #pragma once
 #ifndef PLATFORM_QUOTE_PROVIDER_H
 #define PLATFORM_QUOTE_PROVIDER_H
 
 #include <stdint.h>
-#include"Windows\ext\intel\sgx_ql_lib_common.h"
 
 /*****************************************************************************
  * Data types and interfaces for getting platform revocation info. This

@@ -118,24 +118,25 @@ static uint8_t qe_id[16] = {0x00,
                             0x2e,
                             0x64};
 
-static sgx_cpu_svn_t cpusvn = {0x04,
-                               0x04,
-                               0x02,
-                               0x04,
-                               0xff,
-                               0x80,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00,
-                               0x00};
+static sgx_cpu_svn_t cpusvn = {
+    0x0f,
+    0x0f,
+    0x02,
+    0x04,
+    0x01,
+    0x80,
+    0x07,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00};
 
-static sgx_isv_svn_t pcesvn = 11;
+static sgx_isv_svn_t pcesvn = 10;
 
 static sgx_ql_pck_cert_id_t id = {qe_id, sizeof(qe_id), &cpusvn, &pcesvn, 0};
 
@@ -159,7 +160,7 @@ static uint8_t icx_qe_id[16] = {0x0f,
 static sgx_cpu_svn_t icx_cpusvn = {0x04,
                                    0x04,
                                    0x03,
-                                   0x08,
+                                   0x03,
                                    0xff,
                                    0xff,
                                    0x00,
@@ -173,7 +174,7 @@ static sgx_cpu_svn_t icx_cpusvn = {0x04,
                                    0x00,
                                    0x00};
 
-static sgx_isv_svn_t icx_pcesvn = 11;
+static sgx_isv_svn_t icx_pcesvn = 10;
 
 static sgx_ql_pck_cert_id_t icx_id = {icx_qe_id,
                                       sizeof(icx_qe_id),
@@ -234,9 +235,9 @@ static void* LoadFunctions()
             dlsym(library, "sgx_ql_set_logging_function"));
     EXPECT_NE(sgx_ql_set_logging_function, nullptr);
 
-    sgx_ql_set_logging_callback = reinterpret_cast<sgx_ql_set_callback_function_t>(
+    sgx_ql_set_logging_callback = reinterpret_cast<sgx_ql_set_logging_callback_t>(
             dlsym(library, "sgx_ql_set_logging_callback"));
-    EXPECT_NE(sgx_ql_set_callback_function, nullptr);
+    EXPECT_NE(sgx_ql_set_logging_callback, nullptr);
 
     sgx_ql_free_quote_verification_collateral = reinterpret_cast<sgx_ql_free_quote_verification_collateral_t>(
             dlsym(library, "sgx_ql_free_quote_verification_collateral"));
@@ -343,24 +344,25 @@ static void GetCertsTest()
 
     // Just sanity check a few fields. Parsing the certs would require a big
     // dependency like OpenSSL that we don't necessarily want.
-    constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {0x04,
-                                              0x04,
-                                              0x02,
-                                              0x04,
-                                              0x01,
-                                              0x80,
-                                              0x00,
-                                              0x00,
-                                              0x00,
-                                              0x00,
-                                              0x00,
-                                              0x00,
-                                              0x00,
-                                              0x00,
-                                              0x00,
-                                              0x00};
+    constexpr sgx_cpu_svn_t CPU_SVN_MAPPED = {
+        0x0f,
+        0x0f,
+        0x02,
+        0x04,
+        0x01,
+        0x80,
+        0x07,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00};
 
-    constexpr sgx_isv_svn_t pcesvn_mapped = 11;
+    constexpr sgx_isv_svn_t pcesvn_mapped = 10;
     ASSERT_TRUE(0 == memcmp(&CPU_SVN_MAPPED, &config->cert_cpu_svn, sizeof(CPU_SVN_MAPPED)));
     ASSERT_TRUE(pcesvn_mapped == config->cert_pce_isv_svn);
     ASSERT_TRUE(SGX_QL_CONFIG_VERSION_1 == config->version);
@@ -404,7 +406,7 @@ static void GetCertsTestICXV3()
                                               0x00,
                                               0x00};
 
-    constexpr sgx_isv_svn_t pcesvn_mapped = 11;
+    constexpr sgx_isv_svn_t pcesvn_mapped = 10;
     ASSERT_TRUE(0 == memcmp(&CPU_SVN_MAPPED, &config->cert_cpu_svn, sizeof(CPU_SVN_MAPPED)));
     ASSERT_TRUE(pcesvn_mapped == config->cert_pce_isv_svn);
     ASSERT_TRUE(SGX_QL_CONFIG_VERSION_1 == config->version);
@@ -928,46 +930,6 @@ void SetupEnvironment(std::string version)
         "https://global.acccache.azure.net/sgx/certificates"));
     EXPECT_TRUE(
         SetEnvironmentVariableA("AZDCAP_CLIENT_ID", "AzureDCAPTestsWindows"));
-#endif
-}
-
-TEST(testQuoteProv, quoteProviderTestsDataFromService)
-{
-    libary_type_t library = LoadFunctions();
-
-    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-    ASSERT_TRUE(SGX_QL_SUCCESS == sgx_ql_set_logging_callback(Log));
-
-    //
-    // Get the data from the service
-    //
-    SetupEnvironment("");
-    ASSERT_TRUE(RunQuoteProviderTests());
-
-#if defined __LINUX__
-    dlclose(library);
-#else
-    FreeLibrary(library);
-#endif
-}
-
-TEST(testQuoteProv, quoteProviderTestsV1Collateral)
-{
-    libary_type_t library = LoadFunctions();
-
-    ASSERT_TRUE(SGX_PLAT_ERROR_OK == sgx_ql_set_logging_function(Log));
-    ASSERT_TRUE(SGX_QL_SUCCESS == sgx_ql_set_logging_callback(Log));
-
-    //
-    // Get the data from the service
-    //
-    SetupEnvironment("v1");
-    ASSERT_TRUE(RunQuoteProviderTests());
-
-#if defined __LINUX__
-    dlclose(library);
-#else
-    FreeLibrary(library);
 #endif
 }
 
